@@ -1,7 +1,7 @@
 {
 	"name": "chalk",
 	"version": "5.5.0",
-	"description": "Terminal string styling done right",
+	"description": "Terminal string styling done right with pluggable output formatters",
 	"license": "MIT",
 	"repository": "chalk/chalk",
 	"funding": "https://github.com/chalk/chalk?sponsor=1",
@@ -22,7 +22,8 @@
 	},
 	"scripts": {
 		"test": "xo && c8 ava && tsd",
-		"bench": "matcha benchmark.js"
+		"bench": "matcha benchmark.js",
+		"preview": "node examples/preview.js"
 	},
 	"files": [
 		"source",
@@ -48,7 +49,13 @@
 		"log",
 		"logging",
 		"command-line",
-		"text"
+		"text",
+		"html",
+		"markdown",
+		"json",
+		"formatter",
+		"pluggable",
+		"output"
 	],
 	"devDependencies": {
 		"@types/node": "^16.11.10",

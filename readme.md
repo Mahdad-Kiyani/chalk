@@ -44,68 +44,212 @@ npm install chalk
 ## Usage
 
 ```js
-import chalk from 'chalk';
+import chalk from "chalk";
 
-console.log(chalk.blue('Hello world!'));
+console.log(chalk.blue("Hello world!"));
 ```
 
 Chalk comes with an easy to use composable API where you just chain and nest the styles you want.
 
 ```js
-import chalk from 'chalk';
+import chalk from "chalk";
 
 const log = console.log;
 
 // Combine styled and normal strings
-log(chalk.blue('Hello') + ' World' + chalk.red('!'));
+log(chalk.blue("Hello") + " World" + chalk.red("!"));
 
 // Compose multiple styles using the chainable API
-log(chalk.blue.bgRed.bold('Hello world!'));
+log(chalk.blue.bgRed.bold("Hello world!"));
 
 // Pass in multiple arguments
-log(chalk.blue('Hello', 'World!', 'Foo', 'bar', 'biz', 'baz'));
+log(chalk.blue("Hello", "World!", "Foo", "bar", "biz", "baz"));
 
 // Nest styles
-log(chalk.red('Hello', chalk.underline.bgBlue('world') + '!'));
+log(chalk.red("Hello", chalk.underline.bgBlue("world") + "!"));
 
 // Nest styles of the same type even (color, underline, background)
-log(chalk.green(
-	'I am a green line ' +
-	chalk.blue.underline.bold('with a blue substring') +
-	' that becomes green again!'
-));
+log(
+	chalk.green(
+		"I am a green line " +
+			chalk.blue.underline.bold("with a blue substring") +
+			" that becomes green again!"
+	)
+);
 
 // ES2015 template literal
 log(`
-CPU: ${chalk.red('90%')}
-RAM: ${chalk.green('40%')}
-DISK: ${chalk.yellow('70%')}
+CPU: ${chalk.red("90%")}
+RAM: ${chalk.green("40%")}
+DISK: ${chalk.yellow("70%")}
 `);
 
 // Use RGB colors in terminal emulators that support it.
-log(chalk.rgb(123, 45, 67).underline('Underlined reddish color'));
-log(chalk.hex('#DEADED').bold('Bold gray!'));
+log(chalk.rgb(123, 45, 67).underline("Underlined reddish color"));
+log(chalk.hex("#DEADED").bold("Bold gray!"));
 ```
 
 Easily define your own themes:
 
 ```js
-import chalk from 'chalk';
+import chalk from "chalk";
 
 const error = chalk.bold.red;
-const warning = chalk.hex('#FFA500'); // Orange color
+const warning = chalk.hex("#FFA500"); // Orange color
 
-console.log(error('Error!'));
-console.log(warning('Warning!'));
+console.log(error("Error!"));
+console.log(warning("Warning!"));
 ```
+
+## Pluggable Output Formatters
+
+Chalk now supports pluggable output formatters, allowing you to render styled strings in different formats beyond just terminal ANSI codes.
+
+### Built-in Formatters
+
+#### HTML Formatter
+
+Generate HTML with inline styles:
+
+```js
+import chalk from "chalk";
+
+const htmlChalk = new chalk.constructor({ formatter: "html" });
+
+console.log(htmlChalk.red("Red text"));
+// Output: <span style="color: #e06c75">Red text</span>
+
+console.log(htmlChalk.blue.bold("Bold blue text"));
+// Output: <span style="color: #61afef; font-weight: bold">Bold blue text</span>
+```
+
+#### Markdown Formatter
+
+Generate Markdown formatting:
+
+```js
+import chalk from "chalk";
+
+const markdownChalk = new chalk.constructor({ formatter: "markdown" });
+
+console.log(markdownChalk.bold("Bold text"));
+// Output: **Bold text**
+
+console.log(markdownChalk.italic("Italic text"));
+// Output: _Italic text_
+
+console.log(markdownChalk.bold.italic("Bold italic text"));
+// Output: **_Bold italic text_**
+```
+
+#### JSON Formatter
+
+Generate JSON with style metadata:
+
+```js
+import chalk from "chalk";
+
+const jsonChalk = new chalk.constructor({ formatter: "json" });
+
+console.log(jsonChalk.red("Red text"));
+// Output: {"text":"Red text","styles":{"modifiers":[],"foreground":"red","background":null},"raw":{"open":"\u001B[31m","close":"\u001B[39m"}}
+```
+
+### Dynamic Formatter Switching
+
+You can switch formatters at runtime:
+
+```js
+import chalk from "chalk";
+
+const dynamicChalk = new chalk.constructor();
+
+// Start with ANSI (default)
+console.log(dynamicChalk.red("Hello")); // ANSI output
+
+// Switch to HTML
+dynamicChalk.setFormatter("html");
+console.log(dynamicChalk.red("Hello")); // HTML output
+
+// Switch to Markdown
+dynamicChalk.setFormatter("markdown");
+console.log(dynamicChalk.bold("Hello")); // Markdown output
+```
+
+### Custom Formatters
+
+Create your own formatters by extending the `BaseFormatter` class:
+
+```js
+import chalk, { BaseFormatter } from "chalk";
+
+class EmojiFormatter extends BaseFormatter {
+	format(string, styler) {
+		if (!styler || !string) {
+			return string;
+		}
+
+		const styleInfo = this.getStyleInfo(styler);
+		let emoji = "📝";
+
+		// Map styles to emojis
+		if (styleInfo.foreground === "red") emoji = "🔴";
+		else if (styleInfo.foreground === "green") emoji = "🟢";
+		else if (styleInfo.foreground === "blue") emoji = "🔵";
+
+		if (styleInfo.modifiers.includes("bold")) emoji += "💪";
+
+		return `${emoji} ${string}`;
+	}
+}
+
+const customChalk = new chalk.constructor();
+customChalk.registerFormatter("emoji", new EmojiFormatter());
+customChalk.setFormatter("emoji");
+
+console.log(customChalk.red("Hello")); // 🔴 Hello
+console.log(customChalk.green.bold("World")); // 🟢💪 World
+```
+
+### Environment Detection
+
+Automatically choose the appropriate formatter based on the environment:
+
+```js
+import chalk from "chalk";
+
+function createEnvironmentAwareChalk() {
+	const isBrowser = typeof window !== "undefined";
+
+	return new chalk.constructor({
+		formatter: isBrowser ? "html" : "ansi",
+	});
+}
+
+const envChalk = createEnvironmentAwareChalk();
+```
+
+### Formatter API
+
+- `chalk.setFormatter(formatterName)` - Set the output formatter
+- `chalk.getFormatter()` - Get the current formatter instance
+- `chalk.registerFormatter(name, formatter)` - Register a custom formatter
+- `chalk.listFormatters()` - List all available formatters
+
+### Available Formatters
+
+- `ansi` - ANSI escape sequences (default)
+- `html` - HTML with inline styles
+- `markdown` - Markdown formatting
+- `json` - JSON with style metadata
 
 Take advantage of console.log [string substitution](https://nodejs.org/docs/latest/api/console.html#console_console_log_data_args):
 
 ```js
-import chalk from 'chalk';
+import chalk from "chalk";
 
-const name = 'Sindre';
-console.log(chalk.green('Hello %s'), name);
+const name = "Sindre";
+console.log(chalk.green("Hello %s"), name);
 //=> 'Hello Sindre'
 ```
 
@@ -128,17 +272,17 @@ Color support is automatically detected, but you can override it by setting the 
 If you need to change this in a reusable module, create a new instance:
 
 ```js
-import {Chalk} from 'chalk';
+import { Chalk } from "chalk";
 
-const customChalk = new Chalk({level: 0});
+const customChalk = new Chalk({ level: 0 });
 ```
 
-| Level | Description |
-| :---: | :--- |
-| `0` | All colors disabled |
-| `1` | Basic color support (16 colors) |
-| `2` | 256 color support |
-| `3` | Truecolor support (16 million colors) |
+| Level | Description                           |
+| :---: | :------------------------------------ |
+|  `0`  | All colors disabled                   |
+|  `1`  | Basic color support (16 colors)       |
+|  `2`  | 256 color support                     |
+|  `3`  | Truecolor support (16 million colors) |
 
 ### supportsColor
 
@@ -159,12 +303,12 @@ All supported style strings are exposed as an array of strings for convenience. 
 This can be useful if you wrap Chalk and need to validate input:
 
 ```js
-import {modifierNames, foregroundColorNames} from 'chalk';
+import { modifierNames, foregroundColorNames } from "chalk";
 
-console.log(modifierNames.includes('bold'));
+console.log(modifierNames.includes("bold"));
 //=> true
 
-console.log(foregroundColorNames.includes('pink'));
+console.log(foregroundColorNames.includes("pink"));
 //=> false
 ```
 
@@ -175,12 +319,12 @@ console.log(foregroundColorNames.includes('pink'));
 - `reset` - Reset the current style.
 - `bold` - Make the text bold.
 - `dim` - Make the text have lower opacity.
-- `italic` - Make the text italic. *(Not widely supported)*
-- `underline` - Put a horizontal line below the text. *(Not widely supported)*
-- `overline` - Put a horizontal line above the text. *(Not widely supported)*
+- `italic` - Make the text italic. _(Not widely supported)_
+- `underline` - Put a horizontal line below the text. _(Not widely supported)_
+- `overline` - Put a horizontal line above the text. _(Not widely supported)_
 - `inverse`- Invert background and foreground colors.
 - `hidden` - Print the text but make it invisible.
-- `strikethrough` - Puts a horizontal line through the center of the text. *(Not widely supported)*
+- `strikethrough` - Puts a horizontal line through the center of the text. _(Not widely supported)_
 - `visible`- Print the text only when Chalk has a color level above zero. Can be useful for things that are purely cosmetic.
 
 ### Colors
@@ -265,7 +409,7 @@ If the goal is to clean up the ecosystem, switching away from Chalk won’t even
 
 If absolute package size is important to you, I also maintain [yoctocolors](https://github.com/sindresorhus/yoctocolors), one of the smallest color packages out there.
 
-*\- [Sindre](https://github.com/sindresorhus)*
+_\- [Sindre](https://github.com/sindresorhus)_
 
 ### But the smaller coloring package has benchmarks showing it is faster
 
@@ -289,7 +433,7 @@ If absolute package size is important to you, I also maintain [yoctocolors](http
 - [chalk-pipe](https://github.com/LitoMore/chalk-pipe) - Create chalk style schemes with simpler style strings
 - [terminal-link](https://github.com/sindresorhus/terminal-link) - Create clickable links in the terminal
 
-*(Not accepting additional entries)*
+_(Not accepting additional entries)_
 
 ## Maintainers
 

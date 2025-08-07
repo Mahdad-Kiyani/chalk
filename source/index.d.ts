@@ -6,8 +6,8 @@ import {
 	ForegroundColorName,
 	BackgroundColorName,
 	ColorName,
-} from './vendor/ansi-styles/index.js';
-import {ColorInfo, ColorSupportLevel} from './vendor/supports-color/index.js';
+} from "./vendor/ansi-styles/index.js";
+import { ColorInfo, ColorSupportLevel } from "./vendor/supports-color/index.js";
 
 export interface Options {
 	/**
@@ -22,6 +22,19 @@ export interface Options {
 	- `3` - Truecolor 16 million colors support.
 	*/
 	readonly level?: ColorSupportLevel;
+
+	/**
+	Specify the output formatter for Chalk.
+
+	By default, ANSI escape sequences are used for terminal output.
+
+	Available formatters:
+	- `'ansi'` - ANSI escape sequences (default)
+	- `'html'` - HTML with inline styles
+	- `'markdown'` - Markdown formatting
+	- `'json'` - JSON with style metadata
+	*/
+	readonly formatter?: string;
 }
 
 /**
@@ -120,6 +133,67 @@ export interface ChalkInstance {
 	```
 	*/
 	bgAnsi256: (index: number) => this;
+
+	/**
+	Set the output formatter for this chalk instance.
+
+	@param formatterName - The name of the formatter to use
+	@returns The chalk instance for chaining
+
+	@example
+	```
+	import chalk from 'chalk';
+
+	chalk.setFormatter('html').red('Hello World');
+	// Returns: '<span style="color: #e06c75">Hello World</span>'
+	```
+	*/
+	setFormatter: (formatterName: string) => this;
+
+	/**
+	Get the current formatter instance.
+
+	@returns The current formatter instance
+	*/
+	getFormatter: () => any;
+
+	/**
+	Register a custom formatter.
+
+	@param name - The name of the formatter
+	@param formatter - The formatter instance (must extend BaseFormatter)
+	@returns The chalk instance for chaining
+
+	@example
+	```
+	import chalk, { BaseFormatter } from 'chalk';
+
+	class CustomFormatter extends BaseFormatter {
+		format(string, styler) {
+			return `[${string}]`;
+		}
+	}
+
+	chalk.registerFormatter('custom', new CustomFormatter());
+	chalk.setFormatter('custom').red('Hello');
+	```
+	*/
+	registerFormatter: (name: string, formatter: any) => this;
+
+	/**
+	List all available formatters.
+
+	@returns Array of formatter names
+
+	@example
+	```
+	import chalk from 'chalk';
+
+	console.log(chalk.listFormatters());
+	// ['ansi', 'html', 'markdown', 'json']
+	```
+	*/
+	listFormatters: () => string[];
 
 	/**
 	Modifier: Reset the current style.
@@ -247,17 +321,35 @@ export const chalkStderr: typeof chalk;
 export const supportsColorStderr: typeof supportsColor;
 
 export {
-	ModifierName, ForegroundColorName, BackgroundColorName, ColorName,
-	modifierNames, foregroundColorNames, backgroundColorNames, colorNames,
-// } from '#ansi-styles';
-} from './vendor/ansi-styles/index.js';
+	ModifierName,
+	ForegroundColorName,
+	BackgroundColorName,
+	ColorName,
+	modifierNames,
+	foregroundColorNames,
+	backgroundColorNames,
+	colorNames,
+	// } from '#ansi-styles';
+} from "./vendor/ansi-styles/index.js";
+
+// Export formatter-related types and classes
+export {
+	BaseFormatter,
+	AnsiFormatter,
+	HtmlFormatter,
+	MarkdownFormatter,
+	JsonFormatter,
+	formatterRegistry,
+	type StyleInfo,
+	type Styler,
+} from "./formatters/index.js";
 
 export {
 	ColorInfo,
 	ColorSupport,
 	ColorSupportLevel,
-// } from '#supports-color';
-} from './vendor/supports-color/index.js';
+	// } from '#supports-color';
+} from "./vendor/supports-color/index.js";
 
 // TODO: Remove these aliases in the next major version
 /**
